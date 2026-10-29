@@ -1,7 +1,7 @@
 """Minimal Freqtrade strategy with Astro Agents data as features (a data source, not a signal).
 
 Copy into user_data/strategies/, set ASTRO_CREDITS_TOKEN in the bot's environment, and add
-`astro-agents` to the bot's Python environment (pip install astro-agents).
+`astro-agents` to the bot's Python environment (pip install "astro-agents @ git+https://github.com/aidatatools-dev/astro-agents-clients#subdirectory=python").
 
     freqtrade backtesting --strategy AstroDataStrategy --timeframe 1d --timerange 20230101-20241231
 

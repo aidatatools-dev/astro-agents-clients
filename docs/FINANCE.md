@@ -119,7 +119,7 @@ The output is already shaped so that an adapter for Freqtrade, OctoBot, Superalg
 2. merge on `timestamp`;
 3. expose the columns as features or informative pairs.
 
-The official Python client ([clients/python](../python), `pip install astro-agents`) already does this.
+The official Python client ([clients/python](../python), `pip install "astro-agents @ git+https://github.com/aidatatools-dev/astro-agents-clients#subdirectory=python"`) already does this.
 `planetary_lines()` and `events()` return DataFrames and page long ranges. `merge_events()` joins the calendar
 onto candles. The [examples](../python/examples) cover vectorbt, backtrader and a minimal Freqtrade strategy
 that uses the data as features. No plugin is published inside those frameworks' own repositories.

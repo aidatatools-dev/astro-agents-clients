@@ -1,6 +1,7 @@
 """Feed Gann planetary lines to backtrader as extra data lines.
 
-    pip install astro-agents backtrader   # + optionally yfinance
+    pip install "astro-agents @ git+https://github.com/aidatatools-dev/astro-agents-clients#subdirectory=python"
+    pip install backtrader   # + optionally yfinance
     export ASTRO_CREDITS_TOKEN=astc_...   # 3 years daily = 2 calls x $0.20
     python backtrader_planetary_lines.py
 

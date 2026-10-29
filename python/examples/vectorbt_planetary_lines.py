@@ -1,6 +1,7 @@
 """Backtest a rule built on a Gann planetary line with vectorbt.
 
-    pip install astro-agents vectorbt     # + optionally yfinance
+    pip install "astro-agents @ git+https://github.com/aidatatools-dev/astro-agents-clients#subdirectory=python"
+    pip install vectorbt     # + optionally yfinance
     export ASTRO_CREDITS_TOKEN=astc_...   # 3 years daily = 2 calls x $0.20
     python vectorbt_planetary_lines.py
 

@@ -1,7 +1,6 @@
 # astro-agents: Python client
 
-[![PyPI](https://img.shields.io/pypi/v/astro-agents.svg)](https://pypi.org/project/astro-agents/)
-[![Python](https://img.shields.io/pypi/pyversions/astro-agents.svg)](https://pypi.org/project/astro-agents/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-3776ab)](https://github.com/aidatatools-dev/astro-agents-clients/tree/main/python)
 [![API](https://img.shields.io/badge/API-astro--agent.dev-0b7285)](https://astro-agent.dev/v1/catalog)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aidatatools-dev/astro-agents-clients/blob/main/python/LICENSE)
 
@@ -16,8 +15,10 @@ Everything comes from the NASA/JPL DE440 ephemeris, with no LLM. Every result is
 verifiable. This is data for your own analysis, never a trading signal or a forecast.
 
 ```bash
-pip install astro-agents
+pip install "astro-agents @ git+https://github.com/aidatatools-dev/astro-agents-clients#subdirectory=python"
 ```
+
+The package is not on PyPI yet: install it from GitHub as above.
 
 ## Quick start
 

@@ -1,6 +1,6 @@
 """Merge the celestial event calendar onto daily OHLC candles, then compare returns around events.
 
-    pip install astro-agents          # + optionally yfinance
+    pip install "astro-agents @ git+https://github.com/aidatatools-dev/astro-agents-clients#subdirectory=python"   # + optionally yfinance
     export ASTRO_CREDITS_TOKEN=astc_...   # 3 years of events = 3 calls x $0.25
     python events_ohlc_merge.py
 
