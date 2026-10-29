@@ -347,6 +347,49 @@ class Client:
         _attach(df, results)
         return df
 
+    def analogues(self, reference="now", *, direction: str | None = None, start=None, end=None,
+                  resolution: str | None = None, bodies: Iterable[str] | None = None, perspective: str | None = None,
+                  features: Iterable[str] | None = None, weights: dict | None = None, top_n: int | None = None,
+                  max_distance: float | None = None, min_separation_days: float | None = None,
+                  require_same_retrograde: bool | None = None, options: dict | None = None,
+                  raw: bool = False) -> pd.DataFrame | Result:
+        """Sky analogues ($0.25 per call): the dates whose sky best matches a reference sky.
+
+        `reference`: "now", a UTC moment ("2026-10-29T00:00Z", a date, or an aware datetime; a naive
+        datetime is read as UTC) or a dict of feature values {"geo.jupiter-saturn:angle": 0, ...}.
+        `direction`: "past", "future" or "both"; `start`/`end` (YYYY-MM-DD) bound the candidates.
+        Returns a DataFrame ranked by `score` (degrees, 0 = the same sky) with `time` (UTC), `timestamp`,
+        each body's longitude and retrograde flag and `distance:<feature id>` columns; the reference
+        sky is in `df.attrs["reference"]` and the metric in `df.attrs["metric"]`. Data for your own
+        analysis, never a signal or forecast.
+        """
+        if isinstance(reference, dict):
+            ref = {"values": reference}
+        elif isinstance(reference, datetime):
+            ref = (reference.astimezone(timezone.utc) if reference.tzinfo else
+                   reference.replace(tzinfo=timezone.utc)).strftime("%Y-%m-%dT%H:%MZ")
+        else:
+            ref = str(reference)
+        if (start is None) != (end is None):
+            raise InputError("give both start and end, or neither", code="INVALID_RANGE")
+        body = _clean({"reference": ref, "direction": direction, "resolution": resolution,
+                       "range": {"start": _parse_day(start).isoformat(), "end": _parse_day(end).isoformat()}
+                       if start is not None else None,
+                       "bodies": list(bodies) if bodies else None, "perspective": perspective,
+                       "features": list(features) if features else None, "weights": weights, "top_n": top_n,
+                       "max_distance": max_distance, "min_separation_days": min_separation_days,
+                       "require_same_retrograde": require_same_retrograde, "options": options, "format": "columns"})
+        res = self.call("finance/analogues", body)
+        if raw:
+            return res
+        df = pd.DataFrame(res["matches"])
+        if not df.empty:
+            df.insert(0, "time", _utc(df["timestamp"]))
+            df = df.set_index("rank")
+        _attach(df, [res])
+        df.attrs.update(reference=res["reference"], settings=res["settings"], metric=res["settings"]["metric"])
+        return df
+
     # --- western -----------------------------------------------------------------------------------
 
     def positions(self, datetime=None, latitude: float | None = None, longitude: float | None = None, *,

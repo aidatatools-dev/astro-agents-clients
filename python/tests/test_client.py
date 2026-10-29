@@ -210,6 +210,28 @@ def test_snapshot_lines_and_concat_with_attrs():
 
 # --- verification and credits ------------------------------------------------------------------------
 
+def test_analogues_sends_the_reference_and_returns_ranked_rows():
+    matches = {"rank": [1, 2], "date_utc": ["2016-05-09T00:00Z", "2003-02-17T00:00Z"],
+               "timestamp": [1462752000, 1045440000], "score": [4.2, 5.1], "geo.jupiter": [10.0, 20.0],
+               "distance:geo.jupiter": [4.2, 5.1]}
+    result = {"settings": {"metric": {"score": "weighted mean"}}, "reference": {"date_utc": "2026-10-29T00:00Z"},
+              "matches": matches, "counts": {"matches": 2}}
+    api = FakeAPI(lambda r: (200, envelope("finance/analogues", result)))
+    df = client(api).analogues(pd.Timestamp("2026-10-29T00:00Z").to_pydatetime(), direction="past",
+                               start="1950-01-01", end="2026-10-28", bodies=["jupiter"], weights={"geo.jupiter": 2})
+    body = api.requests[0]["body"]
+    assert api.requests[0]["url"].endswith("/v1/finance/analogues")
+    assert body["reference"] == "2026-10-29T00:00Z" and body["range"] == {"start": "1950-01-01", "end": "2026-10-28"}
+    assert body["format"] == "columns" and body["weights"] == {"geo.jupiter": 2}
+    assert list(df.index) == [1, 2] and df["time"].iloc[0] == pd.Timestamp("2016-05-09", tz="UTC")
+    assert df.attrs["reference"]["date_utc"] == "2026-10-29T00:00Z" and df.attrs["metric"]["score"]
+    assert verify_dataframe(df)
+    client(api).analogues({"geo.jupiter-saturn:angle": 0}, start="2019-01-01", end="2022-12-31")
+    assert api.requests[-1]["body"]["reference"] == {"values": {"geo.jupiter-saturn:angle": 0}}
+    with pytest.raises(InputError):
+        client(api).analogues("now", start="2020-01-01")
+
+
 def test_verify_local_matches_the_service_rule():
     result = {"b": 1, "a": [0.1234567, -0.0000001, float("nan"), True, None, "x"]}
     canonical = '{"a":[0.123457,0.0,null,true,null,"x"],"b":1}'
@@ -260,7 +282,8 @@ def test_examples_compile_and_notebook_is_valid():
     ex = Path(__file__).resolve().parents[1] / "examples"
     scripts = sorted(ex.glob("*.py"))
     assert {p.name for p in scripts} >= {"events_ohlc_merge.py", "vectorbt_planetary_lines.py",
-                                         "backtrader_planetary_lines.py", "freqtrade_astro_strategy.py"}
+                                         "backtrader_planetary_lines.py", "freqtrade_astro_strategy.py",
+                                         "sky_analogues.py"}
     for p in scripts:
         py_compile.compile(str(p), doraise=True)
     nb = json.loads((ex / "quickstart.ipynb").read_text(encoding="utf-8"))

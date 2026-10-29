@@ -12,6 +12,7 @@ and event times from NASA/JPL DE440 (1800–2200); what a strategy does with the
 |---|---|---|---|
 | `POST /v1/finance/planetary-lines` | `planetary_lines` | $0.20 | Gann lines: degrees geo + helio, aspect offsets, Mean of 5 / Circle of 8, price levels, snapshot or series |
 | `POST /v1/finance/events` | `astro_event_calendar` | $0.25 | Ingresses, stations, lunations, eclipses, aspects, parallels, out-of-bounds, to the minute |
+| `POST /v1/finance/analogues` | `sky_analogues` | $0.25 | Matching skies: the past or future dates whose positions best match a reference sky, ranked by a stated angular distance |
 | `POST /v1/western/positions` | `planet_positions` | $0.01 | `options.perspective: "heliocentric"`, `options.coordinates: "equatorial"` |
 | `POST /v1/western/aspects` | `aspects` | $0.02 | `options.declination: true` (parallels / contra-parallels) |
 | `POST /v1/western/sky` | `sky_today` | $0.01 | The sky now and the next 1–90 days of events |

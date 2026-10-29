@@ -41,7 +41,18 @@ client.positions("2024-03-01T00:00Z", perspective="heliocentric", coordinates="e
 
 # Declination parallels
 client.parallels("2024-03-01T00:00Z")
+
+# Matching skies: past analogues of a date's slow-planet sky, one per passage (10 years apart)
+past = client.analogues("2026-10-29T00:00Z", direction="past",
+                        bodies=["jupiter", "saturn", "uranus", "neptune", "pluto"], min_separation_days=3650)
+past[["time", "score", "geo.jupiter", "geo.saturn"]]
+# ...and the next ones; or your own configuration, e.g. {"geo.jupiter-saturn:angle": 0}
+future = client.analogues("2026-10-29T00:00Z", direction="future", min_separation_days=365)
 ```
+
+`analogues()` ranks dates by a stated angular distance (`score`, in degrees; the formula is in
+`df.attrs["metric"]`, and each row carries its `distance:<feature id>` columns). It finds matching positions,
+nothing more: data for your own analysis — never a signal or forecast. See `examples/sky_analogues.py`.
 
 Joining events onto candles takes one call, `merge_events`. It wraps `pandas.merge_asof` and first aligns the
 time resolutions, which pandas 3 mixes:
@@ -71,7 +82,8 @@ The packs:
 1 credit = $1, and credits never expire. `client.packs()` lists the packs with what each one buys, and
 `client.balance()` shows your balance. If a token leaks, `client.rotate_token()` replaces it.
 
-Prices per call: positions $0.01, aspects $0.02, planetary lines $0.20, event calendar $0.25, natal chart $0.06.
+Prices per call: positions $0.01, aspects $0.02, planetary lines $0.20, event calendar $0.25, sky analogues $0.25,
+natal chart $0.06.
 The full list is `client.catalog()`.
 
 Long ranges are split into the calls the API accepts. A planetary-lines call holds up to 1000 samples; an events
