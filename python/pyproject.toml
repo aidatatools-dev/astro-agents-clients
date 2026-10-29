@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astro-agents"
+version = "0.1.0"
+description = "Python client for Astro Agents: verifiable planetary timing data (NASA/JPL DE440, SHA-256 proven) for market analysis and backtesting, as pandas DataFrames, plus Western and Vedic astrology."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "aidatatools", email = "aidatatools@proton.me" }]
+keywords = [
+  "astrology", "financial-astrology", "planetary-cycles", "gann", "backtesting", "trading", "quant",
+  "pandas", "ephemeris", "jpl-de440", "eclipses", "mercury-retrograde", "vedic-astrology", "kundli",
+  "x402", "api-client",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Office/Business :: Financial :: Investment",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = ["pandas>=1.5"]
+
+[project.optional-dependencies]
+x402 = ["x402[evm,requests]>=2.21"]
+test = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://astro-agent.dev"
+Documentation = "https://github.com/aidatatools-dev/astro-agents-clients/tree/main/python#readme"
+Source = "https://github.com/aidatatools-dev/astro-agents-clients/tree/main/python"
+"API catalog" = "https://astro-agent.dev/v1/catalog"
+"API reference" = "https://astro-agent.dev/llms-full.txt"
+"Finance guide" = "https://github.com/aidatatools-dev/astro-agents-clients/blob/main/docs/FINANCE.md"
+"Prepaid credits" = "https://github.com/aidatatools-dev/astro-agents-clients/blob/main/docs/CREDITS.md"
+Changelog = "https://github.com/aidatatools-dev/astro-agents-clients/blob/main/python/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+astro_agents = ["py.typed"]
