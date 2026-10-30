@@ -54,6 +54,18 @@ future = client.analogues("2026-10-29T00:00Z", direction="future", min_separatio
 `df.attrs["metric"]`, and each row carries its `distance:<feature id>` columns). It finds matching positions,
 nothing more: data for your own analysis — never a signal or forecast. See `examples/sky_analogues.py`.
 
+Compare a birth sky to past/future dates — data only:
+
+```python
+mine = client.analogues(birth="1990-05-15T14:30", latitude=48.8566, longitude=2.3522, direction="both",
+                        bodies=["jupiter", "saturn", "uranus", "neptune", "pluto"], min_separation_days=3650)
+mine.attrs["warnings"]                 # TIME_UNKNOWN if you give only the date (computed at 12:00 local)
+mine.attrs["reference_resolution"]     # resolved UTC time + the same request with the positions written out
+```
+
+The local time is resolved as in `positions()` (time zone from the coordinates, or `tz="Europe/Paris"`). The
+equivalent request returns the same `result_sha256`. No houses or ascendant. See `examples/birth_analogues.py`.
+
 Joining events onto candles takes one call, `merge_events`. It wraps `pandas.merge_asof` and first aligns the
 time resolutions, which pandas 3 mixes:
 

@@ -12,13 +12,35 @@ and event times from NASA/JPL DE440 (1800–2200); what a strategy does with the
 |---|---|---|---|
 | `POST /v1/finance/planetary-lines` | `planetary_lines` | $0.20 | Gann lines: degrees geo + helio, aspect offsets, Mean of 5 / Circle of 8, price levels, snapshot or series |
 | `POST /v1/finance/events` | `astro_event_calendar` | $0.25 | Ingresses, stations, lunations, eclipses, aspects, parallels, out-of-bounds, to the minute |
-| `POST /v1/finance/analogues` | `sky_analogues` | $0.25 | Matching skies: the past or future dates whose positions best match a reference sky, ranked by a stated angular distance |
+| `POST /v1/finance/analogues` | `sky_analogues` | $0.25 | Matching skies: the past or future dates whose positions best match a reference sky, ranked by a stated angular distance; `reference.birth` compares a birth sky to past/future dates — data only |
 | `POST /v1/western/positions` | `planet_positions` | $0.01 | `options.perspective: "heliocentric"`, `options.coordinates: "equatorial"` |
 | `POST /v1/western/aspects` | `aspects` | $0.02 | `options.declination: true` (parallels / contra-parallels) |
 | `POST /v1/western/sky` | `sky_today` | $0.01 | The sky now and the next 1–90 days of events |
 
 Prices are those of catalog.py; a deployment can still override them (`ASTRO_PRICE_FINANCE_PLANETARY_LINES`,
 `ASTRO_PRICE_FINANCE_EVENTS`).
+
+## Birth-sky analogues
+
+Compare a birth sky to past/future dates — data only. Give the birth as the reference of
+`POST /v1/finance/analogues` (same $0.25, always paid):
+
+```json
+{"reference": {"birth": {"datetime": "1990-05-15T14:30", "latitude": 48.8566, "longitude": 2.3522}},
+ "direction": "both", "bodies": ["jupiter", "saturn", "uranus", "neptune", "pluto"], "min_separation_days": 3650}
+```
+
+- The local time is resolved as in `/v1/western/positions`: the time zone comes from the coordinates or `timezone`,
+  with historical offsets. `direction`, the default range and `min_separation_days` count from the birth moment.
+- With a date alone (`"1990-05-15"`), the sky is computed at 12:00 local and `meta.warnings` carries
+  `TIME_UNKNOWN`. The Moon is then approximate (up to ~6.5°). Jupiter to Pluto move less than 0.25° a day and
+  stay reliable.
+- The comparison uses the same features, weights and metric as any other reference. No houses or ascendant.
+- `meta.reference_resolution.equivalent_request` writes the birth sky out as
+  `{"values": {...}, "datetime": "<birth UTC minute>"}`. Sending it instead returns the same result and the same
+  `result_sha256`.
+
+Data for your own analysis — never a signal or forecast.
 
 ## What is better than the desktop suites
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 import socket
 import urllib.error
 
@@ -37,10 +38,10 @@ class FakeAPI:
         return status, {k.lower(): v for k, v in rh.items()}, json.dumps(payload).encode()
 
 
-def envelope(endpoint, result):
+def envelope(endpoint, result, **meta):
     return {"endpoint": endpoint, "result": result,
             "meta": {"input_sha256": "i" * 64, "result_sha256": result_sha256(result), "engine": "astro-agents/1.5.0",
-                     "payment": {"protocol": "credits"}}}
+                     "payment": {"protocol": "credits"}, **meta}}
 
 
 def client(api, **kw):
@@ -232,6 +233,29 @@ def test_analogues_sends_the_reference_and_returns_ranked_rows():
         client(api).analogues("now", start="2020-01-01")
 
 
+def test_analogues_birth_shortcut_sends_a_birth_reference():
+    result = {"settings": {"metric": {"score": "weighted mean"}}, "reference": {"source": "values"},
+              "matches": {"rank": [1], "date_utc": ["2001-08-29T12:30Z"], "timestamp": [999088200], "score": [4.0]},
+              "counts": {"matches": 1}}
+    warn = [{"code": "TIME_UNKNOWN", "message": "no birth time given"}]
+    res_meta = {"warnings": warn, "reference_resolution": {"source": "birth", "equivalent_request": {}}}
+    api = FakeAPI(lambda r: (200, envelope("finance/analogues", result, **res_meta)))
+    df = client(api).analogues(birth="1990-05-15T14:30", latitude=48.8566, longitude=2.3522, direction="both")
+    body = api.requests[0]["body"]
+    assert body["reference"] == {"birth": {"datetime": "1990-05-15T14:30", "latitude": 48.8566, "longitude": 2.3522}}
+    assert body["direction"] == "both" and df.attrs["warnings"] == warn
+    assert df.attrs["reference_resolution"]["source"] == "birth" and verify_dataframe(df)
+    client(api).analogues(birth=datetime(1990, 5, 15, 14, 30), tz="Europe/Paris")
+    assert api.requests[-1]["body"]["reference"] == {"birth": {"datetime": "1990-05-15T14:30",
+                                                               "timezone": "Europe/Paris"}}
+    client(api).analogues(birth={"datetime": "1990-05-15", "latitude": 1.0, "longitude": 2.0})
+    assert api.requests[-1]["body"]["reference"]["birth"] == {"datetime": "1990-05-15", "latitude": 1.0,
+                                                              "longitude": 2.0}
+    for bad in ({"reference": "now", "birth": "1990-05-15"}, {"latitude": 1.0}):
+        with pytest.raises(InputError):
+            client(api).analogues(**bad)
+
+
 def test_verify_local_matches_the_service_rule():
     result = {"b": 1, "a": [0.1234567, -0.0000001, float("nan"), True, None, "x"]}
     canonical = '{"a":[0.123457,0.0,null,true,null,"x"],"b":1}'
@@ -283,7 +307,7 @@ def test_examples_compile_and_notebook_is_valid():
     scripts = sorted(ex.glob("*.py"))
     assert {p.name for p in scripts} >= {"events_ohlc_merge.py", "vectorbt_planetary_lines.py",
                                          "backtrader_planetary_lines.py", "freqtrade_astro_strategy.py",
-                                         "sky_analogues.py"}
+                                         "sky_analogues.py", "birth_analogues.py"}
     for p in scripts:
         py_compile.compile(str(p), doraise=True)
     nb = json.loads((ex / "quickstart.ipynb").read_text(encoding="utf-8"))

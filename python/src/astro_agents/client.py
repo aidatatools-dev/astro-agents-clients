@@ -347,7 +347,9 @@ class Client:
         _attach(df, results)
         return df
 
-    def analogues(self, reference="now", *, direction: str | None = None, start=None, end=None,
+    def analogues(self, reference=None, *, birth=None, latitude: float | None = None,
+                  longitude: float | None = None, tz: str | None = None, direction: str | None = None,
+                  start=None, end=None,
                   resolution: str | None = None, bodies: Iterable[str] | None = None, perspective: str | None = None,
                   features: Iterable[str] | None = None, weights: dict | None = None, top_n: int | None = None,
                   max_distance: float | None = None, min_separation_days: float | None = None,
@@ -355,15 +357,31 @@ class Client:
                   raw: bool = False) -> pd.DataFrame | Result:
         """Sky analogues ($0.25 per call): the dates whose sky best matches a reference sky.
 
-        `reference`: "now", a UTC moment ("2026-10-29T00:00Z", a date, or an aware datetime; a naive
-        datetime is read as UTC) or a dict of feature values {"geo.jupiter-saturn:angle": 0, ...}.
+        `reference`: "now" (default), a UTC moment ("2026-10-29T00:00Z", a date, or an aware datetime; a
+        naive datetime is read as UTC) or a dict of feature values {"geo.jupiter-saturn:angle": 0, ...}.
+        `birth`: compare a birth sky to past/future dates instead: the local birth time ("1990-05-15T14:30",
+        a naive datetime, or "1990-05-15" if the time is unknown) with `latitude`/`longitude` and/or `tz`
+        (IANA zone). Warnings (TIME_UNKNOWN...) are in `df.attrs["warnings"]` and the equivalent request
+        with the positions written out in `df.attrs["reference_resolution"]`.
         `direction`: "past", "future" or "both"; `start`/`end` (YYYY-MM-DD) bound the candidates.
         Returns a DataFrame ranked by `score` (degrees, 0 = the same sky) with `time` (UTC), `timestamp`,
         each body's longitude and retrograde flag and `distance:<feature id>` columns; the reference
         sky is in `df.attrs["reference"]` and the metric in `df.attrs["metric"]`. Data for your own
         analysis, never a signal or forecast.
         """
-        if isinstance(reference, dict):
+        if birth is not None:
+            if reference is not None:
+                raise InputError("give reference or birth, not both", code="INVALID_REFERENCE")
+            if isinstance(birth, dict):  # the server's own shape {datetime, latitude, longitude, timezone}
+                birth = {**birth}
+            else:
+                birth = {"datetime": birth.strftime("%Y-%m-%dT%H:%M") if isinstance(birth, datetime) else str(birth)}
+            ref = {"birth": {**birth, **_clean({"latitude": latitude, "longitude": longitude, "timezone": tz})}}
+        elif latitude is not None or longitude is not None or tz is not None:
+            raise InputError("latitude, longitude and tz go with birth=", code="INVALID_REFERENCE")
+        elif reference is None:
+            ref = "now"
+        elif isinstance(reference, dict):
             ref = {"values": reference}
         elif isinstance(reference, datetime):
             ref = (reference.astimezone(timezone.utc) if reference.tzinfo else
@@ -387,7 +405,9 @@ class Client:
             df.insert(0, "time", _utc(df["timestamp"]))
             df = df.set_index("rank")
         _attach(df, [res])
-        df.attrs.update(reference=res["reference"], settings=res["settings"], metric=res["settings"]["metric"])
+        df.attrs.update(reference=res["reference"], settings=res["settings"], metric=res["settings"]["metric"],
+                        warnings=res.meta.get("warnings", []),
+                        reference_resolution=res.meta.get("reference_resolution"))
         return df
 
     # --- western -----------------------------------------------------------------------------------
