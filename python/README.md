@@ -54,6 +54,23 @@ future = client.analogues("2026-10-29T00:00Z", direction="future", min_separatio
 `df.attrs["metric"]`, and each row carries its `distance:<feature id>` columns). It finds matching positions,
 nothing more: data for your own analysis — never a signal or forecast. See `examples/sky_analogues.py`.
 
+Crypto tokens — a token's launch sky and the key astronomical dates ahead, or two launch skies compared by
+geometry, each with a shareable SVG card ($0.25 per call; give the launch block time, UTC):
+
+```python
+usdc = client.token_chart(launch_datetime="2018-08-03T19:28:24Z", symbol="USDC", start="2026-11-01")
+usdc[["time", "label"]].head()         # exact returns / aspects to the launch positions
+usdc.attrs["planets"][["sign", "deg", "retrograde"]]
+open("usdc.svg", "w", encoding="utf-8").write(usdc.attrs["svg"])
+
+pair = client.token_synastry(a={"launch_datetime": "2018-08-03T19:28:24Z", "symbol": "USDC"},
+                             b={"launch_datetime": "2020-09-14T18:11:26Z", "symbol": "UNI"})
+pair.attrs["score"]["geometry_score"], pair.attrs["tightest"]
+```
+
+The geometry score is an aggregate of aspect exactness (formula in `pair.attrs["meta"]["score"]`), not a rating.
+Data for your own analysis — never a signal or forecast. See `examples/token_cards.py`.
+
 Compare a birth sky to past/future dates — data only:
 
 ```python

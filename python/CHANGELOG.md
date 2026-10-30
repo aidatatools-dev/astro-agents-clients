@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-10-30
+
+- `token_chart(launch_datetime=..., symbol=..., chain=..., address=...)`: a token's launch sky and the key
+  astronomical dates ahead as a DataFrame; launch planets, aspects and the SVG card in `df.attrs`.
+- `token_synastry(a=..., b=...)`: two launch skies compared by geometry (cross-aspects DataFrame, `geometry_score`
+  and the SVG card in `df.attrs`). Launch times are given by the caller; on-chain resolution is not available yet.
+  Data for your own analysis — never a signal or forecast.
+
 ## 0.1.0 — 2026-10-29
 
 First release: pandas-first client for the Astro Agents API.

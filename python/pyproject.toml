@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "astro-agents"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python client for Astro Agents: verifiable planetary timing data (NASA/JPL DE440, SHA-256 proven) for market analysis and backtesting, as pandas DataFrames, plus Western and Vedic astrology."
 readme = "README.md"
 requires-python = ">=3.9"

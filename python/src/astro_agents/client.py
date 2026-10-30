@@ -410,6 +410,71 @@ class Client:
                         reference_resolution=res.meta.get("reference_resolution"))
         return df
 
+    # --- crypto tokens -----------------------------------------------------------------------------
+
+    def token_chart(self, launch_datetime=None, *, address: str | None = None, chain: str | None = None,
+                    symbol: str | None = None, name: str | None = None, start=None, days: int | None = None,
+                    transit_bodies: Iterable[str] | None = None, limit: int | None = None, card: bool = True,
+                    options: dict | None = None, raw: bool = False) -> pd.DataFrame | Result:
+        """Token launch sky ($0.25 per call): the sky at a token's launch moment and the key dates ahead.
+
+        `launch_datetime`: the launch moment in UTC, to the second -- the block time of the contract deployment
+        or mint ("2018-08-03T19:28:24Z", unix seconds, or an aware datetime; a naive one is read as UTC).
+        On-chain resolution is not available yet: `address`/`chain` alone raise an InputError; with a
+        launch_datetime they (and `symbol`/`name`) are labels drawn on the card. `start` (YYYY-MM-DD, default
+        today UTC) and `days` (<= 366) bound the key dates.
+        Returns a DataFrame of key dates (one row per exact return or aspect to a launch position: `time` UTC,
+        timestamp, transit, aspect, launch_point, kind, label) with the launch planets in
+        `df.attrs["planets"]` (a DataFrame by body), the launch aspects in `df.attrs["aspects"]` and the SVG
+        card in `df.attrs["svg"]`. Key astronomical dates, data for your own analysis -- never a signal or
+        forecast.
+        """
+        if launch_datetime is None:
+            raise InputError("give launch_datetime: on-chain resolution of the launch time is not available yet "
+                             "(use the deployment block time from an explorer)", code="LAUNCH_DATETIME_REQUIRED")
+        token = _clean({"chain": chain, "address": address, "symbol": symbol, "name": name})
+        body = _clean({"launch_datetime": _launch(launch_datetime), "token": token or None,
+                       "from": _parse_day(start).isoformat() if start is not None else None, "days": days,
+                       "transit_bodies": list(transit_bodies) if transit_bodies else None, "limit": limit,
+                       "card": None if card else False, "options": options})
+        res = self.call("finance/token-chart", body)
+        if raw:
+            return res
+        df = pd.DataFrame(res["key_dates"])
+        if not df.empty:
+            df.insert(0, "time", _utc(df["timestamp"]))
+        _attach(df, [res])
+        df.attrs.update(planets=pd.DataFrame.from_dict(res["planets"], orient="index"),
+                        aspects=pd.DataFrame(res["aspects"]), summary=res["summary"], returns=res["returns"],
+                        subject=res["subject"], settings=res["settings"], counts=res["counts"],
+                        svg=(res.data.get("card") or {}).get("svg"))
+        return df
+
+    def token_synastry(self, a, b, *, card: bool = True, options: dict | None = None,
+                       raw: bool = False) -> pd.DataFrame | Result:
+        """Token synastry ($0.25 per call): compatibility by sky geometry of two launch moments.
+
+        `a`, `b`: each a launch moment (as in token_chart) or a dict {launch_datetime, chain?, address?,
+        symbol?, name?}. Returns a DataFrame of cross-aspects (a, b, aspect, orb, exactness, nature, label)
+        sorted by orb, with `df.attrs["score"]` (geometry_score and its weights; the formula is in
+        `df.attrs["meta"]["score"]`), `df.attrs["aspect_counts"]`, `df.attrs["tightest"]` and the SVG card in
+        `df.attrs["svg"]`. An aggregate of geometry, not a rating -- never a signal or forecast.
+        """
+        def side(x):
+            if isinstance(x, dict):
+                return {**x, "launch_datetime": _launch(x.get("launch_datetime"))}
+            return _launch(x)
+        res = self.call("finance/token-synastry", _clean({"token_a": side(a), "token_b": side(b),
+                                                          "card": None if card else False, "options": options}))
+        if raw:
+            return res
+        df = pd.DataFrame(res["cross_aspects"])
+        _attach(df, [res])
+        df.attrs.update(score=res["score"], aspect_counts=res["aspect_counts"], tightest=res["tightest"],
+                        token_a=res["token_a"], token_b=res["token_b"], settings=res["settings"],
+                        svg=(res.data.get("card") or {}).get("svg"))
+        return df
+
     # --- western -----------------------------------------------------------------------------------
 
     def positions(self, datetime=None, latitude: float | None = None, longitude: float | None = None, *,
@@ -593,6 +658,14 @@ def merge_events(candles: pd.DataFrame, events: pd.DataFrame, on: str = "open_ti
     out = pd.merge_asof(left.sort_values(on), right.sort_values("time"), left_on=on, right_on="time",
                         direction=direction, tolerance=pd.Timedelta(tolerance) if tolerance is not None else None)
     return out.rename(columns={"time": "event_time"})
+
+
+def _launch(value):
+    """A launch moment for the API: unix seconds and strings as given, datetimes as UTC ISO to the second."""
+    if isinstance(value, datetime):
+        value = value.astimezone(timezone.utc) if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return value
 
 
 def _attach(df: pd.DataFrame, results: list[Result]) -> None:
